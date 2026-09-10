@@ -33,8 +33,6 @@
           kotlin
           gradle
           kotlin-language-server
-          # Andriod
-          android-studio-tools
           # Docker
           docker
         ];

@@ -35,6 +35,8 @@
           kotlin-language-server
           # Docker
           docker
+          # Android
+          android-studio
         ];
       };
     });

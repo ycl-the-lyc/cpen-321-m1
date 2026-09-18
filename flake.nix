@@ -25,7 +25,7 @@
       devShells.default = pkgs.mkShell {
         packages = with pkgs; [
           # TS
-          nodejs
+          nodejs_22
           typescript
           typescript-language-server
           # Kotlin

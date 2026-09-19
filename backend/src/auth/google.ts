@@ -1,10 +1,10 @@
 import { OAuth2Client } from 'google-auth-library'
 
-const client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  '/auth/google/callback'
-);
+const client = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID as string,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+  redirectUri: '/auth/google/callback'
+});
 
 export function getUrl(otp: string) {
   return client.generateAuthUrl({ scope: ['openid', 'email'], otp });

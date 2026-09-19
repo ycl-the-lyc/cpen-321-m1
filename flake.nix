@@ -35,8 +35,6 @@
           kotlin-language-server
           # DB
           mongodb-ce
-          # Web API
-          postman
           # Docker
           docker
           # Android

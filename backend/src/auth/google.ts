@@ -1,13 +1,14 @@
 import { OAuth2Client } from 'google-auth-library'
+import { env } from '../config/env'
 
 const client = new OAuth2Client({
-  clientId: process.env.GOOGLE_CLIENT_ID as string,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-  redirectUri: '/auth/google/callback'
+  clientId: env.google_client_id as string,
+  clientSecret: env.google_client_secret as string,
+  redirectUri: 'http://localhost:3000/auth/google/callback'
 });
 
-export function getUrl(otp: string) {
-  return client.generateAuthUrl({ scope: ['openid', 'email'], otp });
+export function getUrl(state: string) {
+  return client.generateAuthUrl({ scope: ['openid', 'email'], state });
 }
 
 export async function getTokens(code: string) {

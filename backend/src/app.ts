@@ -1,7 +1,7 @@
 import express, { type Express } from 'express';
 import { getTokens as getGoogleTokens, getUrl as getGoogleUrl } from './auth/google';
 
-const MAGIC_OTP = '37'; //TODO
+const MAGIC_STATE = '37'; //TODO
 
 export function createApp(): Express {
   const app = express();
@@ -31,18 +31,22 @@ export function createApp(): Express {
   });
 
   app.get('/auth/google', (_req, res) => {
-    res.json({ url: getGoogleUrl(MAGIC_OTP) });
+    res.json({ url: getGoogleUrl(MAGIC_STATE) });
   });
 
   app.get('/auth/google/callback', async (req, res) => {
     try {
-      const { code, otp } = req.query;
+      const { code, state } = req.query;
 
-      if (typeof (code) !== 'string' || typeof (otp) !== 'string')
+      if (typeof (code) !== 'string' || typeof (state) !== 'string') {
         res.status(404).json('Wrong OAuth params');
+        return;
+      }
 
-      if (otp !== MAGIC_OTP)
+      if (state !== MAGIC_STATE) {
         res.status(400).json('Wrong state');
+        return;
+      }
 
       const user = await getGoogleTokens(code as string);
 

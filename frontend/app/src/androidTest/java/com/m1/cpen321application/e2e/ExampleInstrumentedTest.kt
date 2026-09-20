@@ -1,4 +1,4 @@
-package com.example.cpen321application
+package com.m1.cpen321application
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

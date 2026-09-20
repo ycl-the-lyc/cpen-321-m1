@@ -1,5 +1,6 @@
 import { OAuth2Client } from 'google-auth-library'
 import { env } from '../config/env'
+import { User } from '../session/store';
 
 const client = new OAuth2Client({
   clientId: env.google_client_id as string,
@@ -8,10 +9,10 @@ const client = new OAuth2Client({
 });
 
 export function getUrl(state: string) {
-  return client.generateAuthUrl({ scope: ['openid', 'email'], state });
+  return client.generateAuthUrl({ scope: ['openid', 'email', 'profile'], state });
 }
 
-export async function getTokens(code: string) {
+export async function getTokens(code: string): User {
   const { tokens } = await client.getToken(code);
 
   if (!tokens.id_token)
@@ -29,6 +30,8 @@ export async function getTokens(code: string) {
 
   return {
     id: payload.sub,
-    email: payload.email
+    email: payload.email as string,
+    family_name: payload.family_name as string,
+    given_name: payload.given_name as string
   };
 }

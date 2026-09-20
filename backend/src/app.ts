@@ -1,7 +1,17 @@
 import express, { type Express } from 'express';
 import { getTokens as getGoogleTokens, getUrl as getGoogleUrl } from './auth/google';
+import { randId, states, sessions, tickets } from './session/store';
 
-const MAGIC_STATE = '37'; //TODO
+const STATE_DURATION = 5 * 60 * 1000;
+const SESSION_DURATION = 1 * 60 * 60 * 1000;
+const TICKET_DURATION = 1 * 60 * 1000;
+
+//HACK
+const MAGIC_SESSION_ID = '37'
+
+function isInSession(id: any) {
+  return typeof (id) === 'string' && (id == MAGIC_SESSION_ID || sessions.get(id))
+}
 
 export function createApp(): Express {
   const app = express();
@@ -12,11 +22,25 @@ export function createApp(): Express {
     res.json({ status: 'ok' });
   });
 
-  app.get('/ip', (_req, res) => {
+  app.get('/ip', (req, res) => {
+    const { id } = req.query;
+
+    if (!isInSession(id)) {
+      res.status(404);
+      return;
+    }
+
     res.json({ ip: 'localhost' });
   });
 
-  app.get('/time', (_req, res) => {
+  app.get('/time', (req, res) => {
+    const { id } = req.query;
+
+    if (!isInSession(id)) {
+      res.status(404);
+      return;
+    }
+
     const d = new Date();
     const o = d.getTimezoneOffset();
     const os = o < 0 ? '+' : '-'; // Date offset sign inversed
@@ -26,12 +50,21 @@ export function createApp(): Express {
     res.json({ time: `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()} GMT${os}${String(oh).padStart(2, '0')}:${String(om).padStart(2, '0')}` });
   });
 
-  app.get('/name', (_req, res) => {
+  app.get('/name', (req, res) => {
+    const { id } = req.query;
+
+    if (!isInSession(id)) {
+      res.status(404);
+      return;
+    }
+
     res.json({ first: 'Yecheng', last: 'Liang' });
   });
 
   app.get('/auth/google', (_req, res) => {
-    res.json({ url: getGoogleUrl(MAGIC_STATE) });
+    const state = randId();
+    states.set(state, state, Date.now() + STATE_DURATION);
+    res.json({ url: getGoogleUrl(state) });
   });
 
   app.get('/auth/google/callback', async (req, res) => {
@@ -39,29 +72,54 @@ export function createApp(): Express {
       const { code, state } = req.query;
 
       if (typeof (code) !== 'string' || typeof (state) !== 'string') {
-        res.status(404).json('Wrong OAuth params');
+        res.status(400).json('Wrong OAuth params');
         return;
       }
 
-      if (state !== MAGIC_STATE) {
-        res.status(400).json('Wrong state');
+      if (!states.take(state)) {
+        res.status(400).json('Wrong login state');
         return;
       }
 
       const user = await getGoogleTokens(code as string);
 
-      //TODO user shall exist
+      const sessionId = randId();
+      sessions.set(user.id, sessionId, Date.now() + SESSION_DURATION);
 
-      res.json({
-        user: {
-          id: user.id,
-          email: user.email
-        }
-      });
+      const ticket = randId();
+      tickets.set(ticket, user, TICKET_DURATION);
+
+      // We dont store user info
+
+      res.redirect(`http://localhost:3000/auth/google/done?ticket=${encodeURIComponent(ticket)}`);
     } catch (err) {
       console.error(err);
       res.status(401).json('Google OAuth failed');
     }
+  });
+
+  app.post('/auth/done', async (req, res) => {
+    const { ticket } = req.query;
+
+    if (typeof (ticket) !== 'string')
+      return res.status(400);
+
+    const user = tickets.take(ticket);
+
+    if (!user) {
+      res.status(401).json('Wrong login state');
+      return;
+    }
+
+    res.json({
+      sessionId: sessions.get(user.id),
+      user: {
+        id: user.id,
+        email: user.email,
+        familyName: user.family_name,
+        givenName: user.given_name
+      }
+    })
   });
 
   app.use((_req, res) => {

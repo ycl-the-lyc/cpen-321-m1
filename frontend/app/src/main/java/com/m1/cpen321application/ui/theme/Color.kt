@@ -1,4 +1,4 @@
-package com.example.cpen321application.ui.theme
+package com.m1.cpen321application.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -27,12 +27,10 @@ data class GoogleDoneResponse(val sessionId: String, val user: User)
 
 data class User(val id: String, val email: String, val familyName: String, val givenName: String)
 
-val emptyUser = User("", "", "", "")
-
 object AuthClient {
   private val rf =
           Retrofit.Builder()
-                  .baseUrl("http://localhost:3000/")
+                  .baseUrl(BuildConfig.API_BASE_URL)
                   .addConverterFactory(GsonConverterFactory.create())
                   .build()
 
@@ -42,7 +40,7 @@ object AuthClient {
 class AuthSession(private val api: AuthApi) {
   private var id: String? = null
 
-  private var user: User = emptyUser
+  private var user: User? = null
 
   suspend fun getGoogleUrl(): String {
     return api.google().url
@@ -64,65 +62,14 @@ class AuthSession(private val api: AuthApi) {
 
   fun del() {
     this.id = null
+    this.user = null
   }
 
   fun isIn(): Boolean {
     return id != null
   }
 
-  fun getUser(): User {
+  fun getUser(): User? {
     return user
-  }
-}
-
-sealed interface AuthState {
-  data object Out : AuthState
-  data object Load : AuthState
-  data object In : AuthState
-  data class Err(val msg: String) : AuthState
-}
-
-class AuthViewModel(private val session: AuthSession) : ViewModel() {
-  private val state_mut =
-          MutableStateFlow<AuthState>(
-                  if (session.isIn()) {
-                    AuthState.In
-                  } else {
-                    AuthState.Out
-                  }
-          )
-
-  val state: StateFlow<AuthState> = state_mut.asStateFlow()
-
-  fun google(onUrl: (String) -> Unit) {
-    viewModelScope.launch {
-      state_mut.value = AuthState.Load
-
-      try {
-        val url = session.getGoogleUrl()
-        onUrl(url)
-        state_mut.value = AuthState.Out
-      } catch (e: Exception) {
-        state_mut.value = AuthState.Err(e.message ?: "Google Login failed")
-      }
-    }
-  }
-
-  fun doneGoogle(ticket: String) {
-    viewModelScope.launch {
-      state_mut.value = AuthState.Load
-
-      try {
-        session.doneGoogle(ticket)
-        state_mut.value = AuthState.In
-      } catch (e: Exception) {
-        state_mut.value = AuthState.Err(e.message ?: "Google Login failed")
-      }
-    }
-  }
-
-  fun out() {
-    session.del()
-    state_mut.value = AuthState.Out
   }
 }

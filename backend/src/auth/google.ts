@@ -12,7 +12,7 @@ export function getUrl(state: string) {
   return client.generateAuthUrl({ scope: ['openid', 'email', 'profile'], state });
 }
 
-export async function getTokens(code: string): User {
+export async function getTokens(code: string): Promise<User> {
   const { tokens } = await client.getToken(code);
 
   if (!tokens.id_token)

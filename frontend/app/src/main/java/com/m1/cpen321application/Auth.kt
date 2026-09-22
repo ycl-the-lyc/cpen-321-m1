@@ -1,11 +1,5 @@
 package com.m1.cpen321application
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -71,5 +65,47 @@ class AuthSession(private val api: AuthApi) {
 
   fun getUser(): User? {
     return user
+  }
+}
+
+data class UserRequest(val id: String)
+
+interface UserApi {
+  @POST("ip") suspend fun getIp(@Body request: UserRequest): IpResponse
+
+  @POST("time") suspend fun getTime(@Body request: UserRequest): TimeResponse
+
+  @POST("name") suspend fun getName(@Body request: UserRequest): NameResponse
+}
+
+data class IpResponse(val ip: String)
+
+data class TimeResponse(val time: String)
+
+data class NameResponse(val first: String, val last: String)
+
+object UserClient {
+  private val rf =
+          Retrofit.Builder()
+                  .baseUrl(BuildConfig.API_BASE_URL)
+                  .addConverterFactory(GsonConverterFactory.create())
+                  .build()
+
+  val api: UserApi = rf.create(UserApi::class.java)
+}
+
+class UserSession(private val api: UserApi, val id: String, val user: User) {
+  private val req = UserRequest(id)
+
+  suspend fun getIp(): String {
+    return api.getIp(req).ip
+  }
+
+  suspend fun getTime(): String {
+    return api.getTime(req).time
+  }
+
+  suspend fun getName(): NameResponse {
+    return api.getName(req)
   }
 }

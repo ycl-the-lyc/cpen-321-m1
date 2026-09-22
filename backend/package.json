@@ -21,13 +21,15 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "google-auth-library": "^11.1.0",
-    "mongoose": "^9.10.1"
+    "mongoose": "^9.10.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.20.0",
     "@types/supertest": "^7.2.1",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",

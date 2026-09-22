@@ -1,7 +1,8 @@
 import express, { type Express } from 'express';
-import { getTokens as getGoogleTokens, getUrl as getGoogleUrl } from './auth/google';
-import { randId, states, sessions, tickets } from './session/store';
+import { getTokens as getGoogleTokens, getUrl as getGoogleUrl } from './auth';
+import { randId, states, sessions, tickets } from './session';
 import { env } from './config/env'
+// import { WebSocket } from 'ws'
 
 const STATE_DURATION = 5 * 60 * 1000;
 const SESSION_DURATION = 1 * 60 * 60 * 1000;
@@ -9,7 +10,6 @@ const TICKET_DURATION = 2 * 60 * 1000;
 
 //HACK
 const MAGIC_SESSION_ID = '37'
-
 function isInSession(id: any) {
   return typeof (id) === 'string' && (id == MAGIC_SESSION_ID || sessions.get(id))
 }
@@ -23,8 +23,8 @@ export function createApp(): Express {
     res.json({ status: 'ok' });
   });
 
-  app.get('/ip', (req, res) => {
-    const { id } = req.query;
+  app.post('/ip', (req, res) => {
+    const { id } = req.body;
 
     if (!isInSession(id)) {
       res.status(404);
@@ -34,8 +34,8 @@ export function createApp(): Express {
     res.json({ ip: 'localhost' });
   });
 
-  app.get('/time', (req, res) => {
-    const { id } = req.query;
+  app.post('/time', (req, res) => {
+    const { id } = req.body;
 
     if (!isInSession(id)) {
       res.status(404);
@@ -51,8 +51,8 @@ export function createApp(): Express {
     res.json({ time: `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()} GMT${os}${String(oh).padStart(2, '0')}:${String(om).padStart(2, '0')}` });
   });
 
-  app.get('/name', (req, res) => {
-    const { id } = req.query;
+  app.post('/name', (req, res) => {
+    const { id } = req.body;
 
     if (!isInSession(id)) {
       res.status(404);
@@ -85,10 +85,10 @@ export function createApp(): Express {
       const user = await getGoogleTokens(code as string);
 
       const sessionId = randId();
-      sessions.set(user.id, sessionId, Date.now() + SESSION_DURATION);
+      sessions.set(sessionId, user, Date.now() + SESSION_DURATION);
 
       const ticket = randId();
-      tickets.set(ticket, user, Date.now() + TICKET_DURATION);
+      tickets.set(ticket, sessionId, Date.now() + TICKET_DURATION);
 
       // We dont store user info
 
@@ -105,17 +105,22 @@ export function createApp(): Express {
     if (typeof (ticket) !== 'string')
       return res.status(400);
 
-    const user = tickets.take(ticket);
+    const sessionId = tickets.take(ticket);
 
-    if (!user) {
+    if (!sessionId) {
       res.status(401).json('Wrong login state');
       return;
     }
 
-    console.log(`sid: ${sessions.get(user.id)}`)
+    const user = sessions.get(sessionId)
+
+    if (!user) {
+      res.status(401).json('User does not exist');
+      return;
+    }
 
     res.json({
-      sessionId: sessions.get(user.id),
+      sessionId,
       user: {
         id: user.id,
         email: user.email,

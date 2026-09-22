@@ -51,7 +51,7 @@ export type User = {
 
 export const states = new TimedMap<string>();
 
-export const sessions = new TimedMap<string>();
+export const sessions = new TimedMap<User>();
 
-export const tickets = new TimedMap<User>();
+export const tickets = new TimedMap<string>();
 

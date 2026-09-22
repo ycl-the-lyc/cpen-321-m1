@@ -1,11 +1,11 @@
 import { OAuth2Client } from 'google-auth-library'
-import { env } from '../config/env'
-import { User } from '../session/store';
+import { env } from './config/env'
+import { User } from './session';
 
 const client = new OAuth2Client({
   clientId: env.google_client_id as string,
   clientSecret: env.google_client_secret as string,
-  redirectUri: 'http://localhost:3000/auth/google/callback'
+  redirectUri: `${env.google_callback_base_url}/auth/google/callback`
 });
 
 export function getUrl(state: string) {

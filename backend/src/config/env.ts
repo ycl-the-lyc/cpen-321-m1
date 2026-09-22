@@ -11,8 +11,9 @@ if (Number.isNaN(port) || port < 1 || port > 65535) {
 }
 
 export const env = {
+  base_url: process.env.BASE_URL,
   port,
-  google_callback_base_url: process.env.GOOGLE_CALLBACK_BASE_URL,
+  google_callback_base_url: process.env.BASE_URL,
   google_client_id: process.env.GOOGLE_CLIENT_ID,
   google_client_secret: process.env.GOOGLE_CLIENT_SECRET
 } as const;
